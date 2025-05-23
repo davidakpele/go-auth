@@ -54,15 +54,19 @@ func main() {
 
 	authRepo := repositories.NewAuthRepository(database)
     userRepo := repositories.NewUserRepository(database)
- 
+    apiRepo := repositories.NewAPIRepository(database)
+
+
+    apiService := services.NewAPIService(*apiRepo)
     authService := services.NewAuthService(*authRepo)
     userService := services.NewUserService(*userRepo)
     
+    apiController := controllers.NewAPIController(*apiService)
     authController := controllers.NewAuthController(*authService)
     userController := controllers.NewUserController(*userService)
 	
     // Register all routes by passing the router and dependencies
-    routers.RegisterRoutes(router, authController, userController, userRepo) 
+    routers.RegisterRoutes(router, authController, userController, apiController, userRepo) 
 
     // Start the server
     if err := router.Run(":7099"); err != nil {

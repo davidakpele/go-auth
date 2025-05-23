@@ -12,6 +12,7 @@ import (
 func RegisterRoutes(router *gin.Engine, 
 	authController *controllers.AuthController, 
 	userController *controllers.UserController,
+	apiController *controllers.APIController,
 	userRepo *repositories.UserRepository) {
 	
 	router.GET("/", func(c *gin.Context) {
@@ -54,6 +55,15 @@ func RegisterRoutes(router *gin.Engine,
 	{
 		private.GET("/user/:id", userController.GetUserByID) 
 		private.DELETE("/user/:id", userController.Delete) 
+	}
+
+	// Testing all users endpoints
+	private_all_users_api_route := router.Group("/api/collection")
+	private_all_users_api_route.Use(middleware.AuthenticationMiddleware(userRepo))
+	private_all_users_api_route.Use(middleware.RoleMiddleware("ADMIN", "USER", "SUPER_USER", "MANAGER", "EDITOR"))
+	{
+		private_all_users_api_route.GET("", apiController.Collect)
+		private_all_users_api_route.GET("/", apiController.Collect)
 	}
 
 }
