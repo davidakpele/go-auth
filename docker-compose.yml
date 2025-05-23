@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: go_auth_db
+      MYSQL_USER: go_user
+      MYSQL_PASSWORD: go_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - api-network
+
+  # Go application service (with multiple replicas for load balancing)
+  go-app:
+    build: .
+    ports:
+      - "7099"
+    environment:
+      - GO_ENV=development
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=go_user
+      - DB_PASSWORD=go_password
+      - DB_NAME=go_auth_db
+    depends_on:
+      - mysql
+    networks:
+      - api-network
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+
+  # Nginx for load balancing and reverse proxy
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - go-app
+    networks:
+      - api-network
+
+volumes:
+  mysql_data:
+
+networks:
+  api-network:
+    driver: bridge
